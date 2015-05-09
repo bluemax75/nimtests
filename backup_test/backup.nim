@@ -1,10 +1,30 @@
-import db_mysql
+import logging
+import db_sqlite
+import strutils
 
-var conn = db_mysql.open("127.0.0.1:3306", "root", "sipview", "centrex")
+var logger = newFileLogger("backup.log", fmtStr = verboseFmtStr)
+handlers.add(logger)
+info("Initiating backup")
 
-var res = conn.getAllRows(sql"select id,name,group_id,login_id,version from user")
-echo res[0]
+# Initiate db connection
+proc initDBConnection(): TDbConn =
+    result = db_sqlite.open("test.db", "charly", "d2sms953", "test")
 
-# Establish Mysql connection
+proc getLastId(conn: TDbConn): int =
+    let str_result = conn.getValue(sql"select max(id) from hola")
+    if str_result=="":
+        result = 0
+    else:
+        result = parseInt str_result
 
-# Incremental backup: dump selected records from some tables 
+proc createBackupTable(conn) = 
+    query = sql"create table `backup` (int id PRIMARY KEY, varchar table_name, int table_id, int timestamp)"
+    conn.exec(query)
+    conn.commit()
+
+when isMainModule:
+    let conn = initDBConnection()
+
+    #conn.exec(sql"select * from hola") 
+    echo conn.getAllRows(sql"select * from hola")
+    echo getLastId(conn) 
